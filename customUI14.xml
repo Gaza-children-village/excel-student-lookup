@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" xmlns:gcv="GCV.Tools.Ribbon"
+          onLoad="Ribbon_OnLoad">
+  <ribbon>
+    <tabs>
+      <tab idQ="gcv:GcvToolsTab" label="Gaza Children Village Tools">
+        <group id="gcvStudentsGroup" label="الطلاب">
+          <button id="gcvFetchSelected" label="جلب بيانات الصفوف المحددة" size="large"
+                  imageMso="Refresh" onAction="Ribbon_FetchSelected" getEnabled="Ribbon_StudentSheetEnabled"
+                  screentip="جلب بيانات الصفوف المحددة"
+                  supertip="يجلب من السجل المدني بيانات الطلاب في الصفوف المحددة، ويحدّث الصفوف المعبأة دون حذف القيم المعدلة يدوياً. يعمل في ورقة الطلاب فقط."/>
+          <button id="gcvFetchPending" label="جلب بيانات الصفوف الجديدة" size="large"
+                  imageMso="RefreshAll" onAction="Ribbon_FetchPending" getEnabled="Ribbon_StudentSheetEnabled"
+                  screentip="جلب بيانات الصفوف الجديدة"
+                  supertip="يجلب البيانات لكل صف فيه رقم هوية جديد أو متغير أو فشل جلبه سابقاً بسبب الاتصال."/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
