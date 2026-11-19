@@ -10,7 +10,7 @@ Option Explicit
 Public Const ADDIN_ID As String = "gcv/student-lookup"
 Public Const ADDIN_NAME As String = "GCV Student Lookup"
 Public Const ADDIN_FILE As String = "GCV Student Lookup.xlam"
-Public Const ADDIN_VERSION As String = "3.0.0"
+Public Const ADDIN_VERSION As String = "3.0.1"
 Public Const ADDIN_REPO As String = "Gaza-children-village/excel-student-lookup"
 
 Public Const ID_PROPERTY As String = "GcvAddinId"

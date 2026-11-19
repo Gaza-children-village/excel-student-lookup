@@ -3,8 +3,10 @@ Option Explicit
 
 ' ============================================================================
 ' GCV Student Lookup add-in: start-up, ribbon group "students" and messages.
-' The buttons are enabled only on the student sheet of a GCV workbook; Excel
-' sheet/workbook switches refresh them (GcvAppEvents). Nothing reacts to typing.
+' The buttons are always active; on any sheet other than the student sheet of
+' a GCV workbook they explain what to open. (Greying them out depended on the
+' ribbon being refreshed at the right moment, which failed when the add-in was
+' loaded after the workbook or after a VBA reset.) Nothing reacts to typing.
 ' ============================================================================
 
 Private Declare PtrSafe Function MessageBoxW Lib "user32" (ByVal hWnd As LongPtr, _
@@ -17,8 +19,6 @@ Private Const MB_ICONINFO As Long = &H40
 Private Const MB_RIGHT As Long = &H80000
 Private Const MB_RTLREADING As Long = &H100000
 
-Private mRibbon As Object                ' IRibbonUI
-Private mEvents As GcvAppEvents
 
 ' ----------------------------------------------------------------------------
 ' Add-in life cycle
@@ -27,12 +27,9 @@ Private mEvents As GcvAppEvents
 Public Sub AddinOpened()
     On Error Resume Next                 ' start-up must never show a VBA error
     LogInfo LOG_SOURCE, GcvAddin.ADDIN_NAME & " " & GcvAddin.ADDIN_VERSION & " opened."
-    EnsureEvents
 End Sub
 
 Public Sub AddinClosing()
-    If Not mEvents Is Nothing Then mEvents.Detach
-    Set mEvents = Nothing
 End Sub
 
 Public Sub AddinSelfCheck()
@@ -41,40 +38,24 @@ Public Sub AddinSelfCheck()
     T_SelectRows
 End Sub
 
-' Re-attaches the sheet-switch events after a VBA reset (they only refresh the
-' ribbon buttons; the lookup itself never depends on them).
-Private Sub EnsureEvents()
-    If mEvents Is Nothing Then
-        Set mEvents = New GcvAppEvents
-        mEvents.Attach
-    End If
-End Sub
-
 ' ----------------------------------------------------------------------------
 ' Ribbon callbacks (customUI14.xml)
 ' ----------------------------------------------------------------------------
 
+' Kept for ribbons built from an older shell (onLoad / getEnabled); the
+' buttons are simply always enabled.
 Public Sub Ribbon_OnLoad(ribbon As IRibbonUI)
-    Set mRibbon = ribbon
-End Sub
-
-Public Sub RefreshRibbon()
-    On Error Resume Next
-    If Not mRibbon Is Nothing Then mRibbon.Invalidate
 End Sub
 
 Public Sub Ribbon_StudentSheetEnabled(control As IRibbonControl, ByRef returnedVal)
-    EnsureEvents
-    returnedVal = Not GcvWorkbook.ActiveStudentSheet() Is Nothing
+    returnedVal = True
 End Sub
 
 Public Sub Ribbon_FetchSelected(control As IRibbonControl)
-    EnsureEvents
     StudentRegistry.FetchSelectedRows
 End Sub
 
 Public Sub Ribbon_FetchPending(control As IRibbonControl)
-    EnsureEvents
     StudentRegistry.FetchPendingRows
 End Sub
 

@@ -13,7 +13,7 @@ Excel add-in (`GCV Student Lookup.xlam`) that fills the student rows of the GCV 
 | **جلب بيانات الصفوف المحددة** (fetch selected rows) | Looks up the selected rows; refreshes filled rows without overwriting values corrected by hand |
 | **جلب بيانات الصفوف الجديدة** (fetch new rows) | Every row whose ID has no data yet, has changed, or failed before because of the connection |
 
-The buttons are enabled only on the student sheet of a GCV workbook.
+The buttons work on the student sheet of a GCV workbook; on any other sheet they say which sheet to open.
 
 **On demand only.** Nothing happens while the secretary types, so **Ctrl+Z** keeps working and editing or saving never sends requests.
 
@@ -75,7 +75,7 @@ Every push also runs the source checks: VBA files ASCII with CRLF, module names 
 | File | Purpose |
 |---|---|
 | `src/StudentRegistry.bas` | Lookup logic: validation, writing rows, status, summary |
-| `src/LookupUi.bas`, `src/GcvAppEvents.cls` | Ribbon, enabling the buttons, messages |
+| `src/LookupUi.bas` | Ribbon and messages |
 | `src/GcvWorkbook.bas` | Recognising GCV workbooks and the student sheet |
 | `src/HttpStudentApi.cls`, `src/IStudentApi.cls` | Registry API (WinHTTP) behind an interface |
 | `src/RegistryConfig.cls`, `src/BatchSummary.cls`, `src/StudentLookupResult.cls` | Settings, batch counts, one result |

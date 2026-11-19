@@ -1,5 +1,9 @@
 # Changelog - gcv/student-lookup (GCV Student Lookup add-in)
 
+## 3.0.1
+
+- The two buttons are always active: on another sheet they say to open the student sheet. Before, they could stay greyed out on the student sheet because the ribbon was not refreshed (add-in loaded after the workbook, or after a VBA reset).
+
 ## 3.0.0
 
 - Separate Excel add-in "GCV Student Lookup.xlam"; the school workbook is a plain .xlsx without code.
