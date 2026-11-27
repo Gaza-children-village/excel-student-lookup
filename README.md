@@ -26,6 +26,14 @@ The buttons work on the student sheet of a GCV workbook; on any other sheet they
 - No data loss: when the service cannot be reached, a row keeps the data of the same student and is marked "waiting for retry"; one summary message for the whole batch.
 - Logs (through GCV Logger) contain row numbers and counts, never IDs or names.
 
+## GCV application (local API)
+
+- Requests carry `X-GCV-Excel-Addin: gcv/student-lookup/<version>` and, once the app has written one, its key `X-GCV-Api-Key` (read from `HKCU\Software\GCV Tools\LocalApiKey`, never logged). The app requires the key only after all PCs have 3.1.0 or later.
+- `401`: the app refuses the key → the batch stops, rows wait for retry, the message says to open or update the GCV application.
+- `503`: the registry is not ready (not installed yet, locked, or out of date) → the batch stops, rows wait for retry.
+- After a failed batch, one `GET /api/health` adds the app version and the registry state to the message.
+- Contract: `docs/local-api.md` in the GCV desktop app repository.
+
 ## Requirements
 
 - The GCV application running on the same PC (Civil Registry API on port 5555).
@@ -79,8 +87,9 @@ Every push also runs the source checks: VBA files ASCII with CRLF, module names 
 | `src/GcvWorkbook.bas` | Recognising GCV workbooks and the student sheet |
 | `src/HttpStudentApi.cls`, `src/IStudentApi.cls` | Registry API (WinHTTP) behind an interface |
 | `src/RegistryConfig.cls`, `src/BatchSummary.cls`, `src/StudentLookupResult.cls` | Settings, batch counts, one result |
+| `src/GcvLocalApi.bas` | Headers (add-in, key) and health check for the GCV app; same file in English Names |
 | `src/GcvLogClient.bas`, `src/GcvAddin.bas` | Logging through GCV Logger; identity of the add-in |
-| `src/TestStudentRegistry.bas`, `src/FakeStudentApi.cls` | Tests (development only) |
+| `src/TestStudentRegistry.bas`, `src/FakeStudentApi.cls`, `src/TestGcvLocalApi.bas`, `src/FakeHeaderSink.cls` | Tests (development only) |
 
 ## Part of GCV Tools
 
@@ -89,7 +98,7 @@ Excel add-ins for the schools of Gaza Children's Village. They share one ribbon 
 | Add-in | Repository | What it does |
 |---|---|---|
 | GCV Logger | [excel-logger](https://github.com/Gaza-children-village/excel-logger) | Logs of all GCV add-ins; show logs, report an issue |
-| GCV Updater | [excel-updater](https://github.com/Gaza-children-village/excel-updater) | Installs updates and new tools; home of the catalog, loader and installer |
+| GCV Updater | [excel-updater](https://github.com/Gaza-children-village/excel-updater) | Installs updates and new tools; home of the catalog and loader |
 | GCV Student Lookup | [excel-student-lookup](https://github.com/Gaza-children-village/excel-student-lookup) | Fills student rows from the Civil Registry, on demand |
 | GCV English Names | [excel-english-names](https://github.com/Gaza-children-village/excel-english-names) | `=TO_ENGLISH(cell)`: English spelling of Arabic names |
 

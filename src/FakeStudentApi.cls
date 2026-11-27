@@ -15,6 +15,8 @@ Implements IStudentApi
 
 Public CallCount As Long
 Public FailAllConnections As Boolean
+Public HealthBody As String          ' answer of Health(); "" = the app does not answer
+Public HealthCalls As Long
 
 Private responses As Object
 
@@ -26,8 +28,13 @@ Public Sub RespondFound(ByVal studentId As String, ByVal body As String)
     AddResponse studentId, loFound, 200, body
 End Sub
 
+' Same mapping as HttpStudentApi: 401 and 503 have their own outcomes.
 Public Sub RespondHttpError(ByVal studentId As String, ByVal httpStatus As Long)
-    AddResponse studentId, loHttpError, httpStatus, vbNullString
+    Select Case httpStatus
+        Case 401: AddResponse studentId, loUnauthorized, httpStatus, vbNullString
+        Case 503: AddResponse studentId, loUnavailable, httpStatus, vbNullString
+        Case Else: AddResponse studentId, loHttpError, httpStatus, vbNullString
+    End Select
 End Sub
 
 Public Sub RespondConnectionFailed(ByVal studentId As String)
@@ -44,6 +51,11 @@ Private Sub AddResponse(ByVal studentId As String, ByVal outcome As LookupOutcom
     If outcome = loConnectionFailed Then result.ErrorDescription = "fake: service unreachable"
     Set responses(studentId) = result
 End Sub
+
+Private Function IStudentApi_Health() As String
+    HealthCalls = HealthCalls + 1
+    IStudentApi_Health = HealthBody
+End Function
 
 Private Function IStudentApi_FetchStudent(ByVal studentId As String) As StudentLookupResult
     Dim result As StudentLookupResult

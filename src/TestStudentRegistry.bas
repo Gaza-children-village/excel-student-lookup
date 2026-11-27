@@ -24,7 +24,7 @@ Public Sub RunStudentLookupTests()
     passedCount = 0
     failedCount = 0
     Debug.Print String$(60, "-")
-    Debug.Print "StudentRegistry tests, module " & MODULE_VERSION
+    Debug.Print "StudentRegistry tests, add-in " & GcvAddin.ADDIN_VERSION
     On Error GoTo Crash
 
     ' Pure functions
@@ -36,6 +36,7 @@ Public Sub RunStudentLookupTests()
     Test_Json_ReadsNullsEscapesAndIgnoresKeyNamesUsedAsValues
     Test_ParseIsoDate_ReturnsEmptyForMalformedDates
     Test_ArabicGender_ConvertsKnownValuesOnly
+    Test_Health_GivesVersionAndRegistryState
 
     ' Sheet behaviour
     Set ws = CreateTestSheet()
@@ -47,6 +48,8 @@ Public Sub RunStudentLookupTests()
     Test_ConnectionFailure_ClearsDataOfPreviousIdAndMarksPending ws
     Test_ConnectionFailure_StopsFurtherRequestsInBatch ws
     Test_HttpError_MarksPendingButContinuesBatch ws
+    Test_Unauthorized_StopsTheBatchAndKeepsRowsForRetry ws
+    Test_Unavailable_StopsTheBatch ws
     Test_NotFound_ClearsFields ws
     Test_ClearingId_ClearsRowState ws
     Test_InvalidId_IsNotSentToApi ws
@@ -137,6 +140,19 @@ Private Sub Test_ParseIsoDate_ReturnsEmptyForMalformedDates()
     AssertEqual True, IsEmpty(ParseIsoDate("")), "empty"
     AssertEqual True, IsEmpty(ParseIsoDate("2015-02-30")), "impossible day"
     AssertEqual True, IsEmpty(ParseIsoDate("2015-00-10")), "month zero"
+End Sub
+
+Private Sub Test_Health_GivesVersionAndRegistryState()
+    Dim summary As BatchSummary
+    StartTest "Health answer: app version and registry state"
+    Set summary = New BatchSummary
+    ApplyHealth summary, "{""registry"":""Unavailable"",""names"":""ready"",""version"":""1.9.0""}"
+    AssertEqual "1.9.0", summary.AppVersion, "version"
+    AssertEqual "unavailable", summary.RegistryState, "registry"
+    Set summary = New BatchSummary
+    ApplyHealth summary, ""
+    AssertEqual "", summary.AppVersion, "no answer"
+    AssertEqual "", summary.RegistryState, "no state"
 End Sub
 
 Private Sub Test_ArabicGender_ConvertsKnownValuesOnly()
@@ -278,6 +294,48 @@ Private Sub Test_HttpError_MarksPendingButContinuesBatch(ByVal ws As Worksheet)
     AssertEqual StatusPending() & " (HTTP 500)", ws.Range("AE4").Value2, "error row status"
     AssertEqual "Student B", ws.Range("C5").Value2, "next row filled"
     AssertEqual 500, summary.LastHttpStatus, "status recorded"
+End Sub
+
+Private Sub Test_Unauthorized_StopsTheBatchAndKeepsRowsForRetry(ByVal ws As Worksheet)
+    Dim api As FakeStudentApi
+    Dim summary As BatchSummary
+    StartTest "401: no more requests in the batch, rows wait for retry"
+    ResetSheet ws
+    Set api = New FakeStudentApi
+    api.RespondHttpError ID_A, 401
+    api.RespondFound ID_B, StudentJson("Student B", "")
+
+    ws.Range("B4:B5").NumberFormat = "@"
+    ws.Range("B4").Value = ID_A
+    ws.Range("B5").Value = ID_B
+    Set summary = Process(ws, ws.Range("B4:B5"), api)
+
+    AssertEqual 1, api.CallCount, "one request only"
+    AssertEqual True, summary.Unauthorized, "refusal flagged"
+    AssertEqual True, summary.StopRequests, "batch stopped"
+    AssertEqual 2, summary.Pending, "both rows wait"
+    AssertEqual StatusPending() & " (HTTP 401)", ws.Range("AE4").Value2, "first row"
+    AssertEqual StatusPending(), ws.Range("AE5").Value2, "second row"
+    AssertEqual "", CStr(ws.Range("C5").Value2), "nothing filled"
+End Sub
+
+Private Sub Test_Unavailable_StopsTheBatch(ByVal ws As Worksheet)
+    Dim api As FakeStudentApi
+    Dim summary As BatchSummary
+    StartTest "503: registry not ready, batch stopped"
+    ResetSheet ws
+    Set api = New FakeStudentApi
+    api.RespondHttpError ID_A, 503
+
+    ws.Range("B4:B5").NumberFormat = "@"
+    ws.Range("B4").Value = ID_A
+    ws.Range("B5").Value = ID_B
+    Set summary = Process(ws, ws.Range("B4:B5"), api)
+
+    AssertEqual 1, api.CallCount, "one request only"
+    AssertEqual True, summary.ServiceUnavailable, "not ready flagged"
+    AssertEqual False, summary.Unauthorized, "not a refusal"
+    AssertEqual StatusPending() & " (HTTP 503)", ws.Range("AE4").Value2, "first row"
 End Sub
 
 Private Sub Test_NotFound_ClearsFields(ByVal ws As Worksheet)

@@ -21,6 +21,10 @@ Public FailedKeptData As Long
 Public Pending As Long
 
 Public ConnectionDown As Boolean
+Public Unauthorized As Boolean       ' 401 from the GCV application
+Public ServiceUnavailable As Boolean ' 503: registry not ready
+Public AppVersion As String          ' from /api/health after a failure
+Public RegistryState As String       ' "ready" / "unavailable" / "" (no answer)
 Public LastResult As RowResult
 Public LastHttpStatus As Long
 Public LastError As String
@@ -40,6 +44,11 @@ Public Sub Record(ByVal result As RowResult)
             Err.Raise vbObjectError + 610, "BatchSummary.Record", "Unknown row result: " & result
     End Select
 End Sub
+
+' No more requests in this batch: they would fail the same way.
+Public Property Get StopRequests() As Boolean
+    StopRequests = ConnectionDown Or Unauthorized Or ServiceUnavailable
+End Property
 
 Public Property Get ProblemCount() As Long
     ProblemCount = Invalid + NotFound + FailedKeptData + Pending

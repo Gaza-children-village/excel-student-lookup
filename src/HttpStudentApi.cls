@@ -52,7 +52,7 @@ Private Function IStudentApi_FetchStudent(ByVal studentId As String) As StudentL
     http.SetTimeouts RESOLVE_TIMEOUT_MS, CONNECT_TIMEOUT_MS, SEND_TIMEOUT_MS, RECEIVE_TIMEOUT_MS
     http.Open "GET", requestUrl, False
     http.SetRequestHeader "Accept", "application/json"
-    http.SetRequestHeader "X-GCV-Excel-Module-Version", MODULE_VERSION
+    GcvLocalApi.AddHeaders http                         ' add-in version and the app's key
     http.Send
     On Error GoTo 0
 
@@ -60,7 +60,11 @@ Private Function IStudentApi_FetchStudent(ByVal studentId As String) As StudentL
     ' The URL contains the student ID, so it is never logged.
     LogDebug LOG_SOURCE, "Registry request: HTTP " & http.Status & " in " & ElapsedMs(started) & " ms."
 
-    If http.Status = HTTP_NOT_FOUND Then
+    If http.Status = GcvLocalApi.HTTP_UNAUTHORIZED Then
+        result.Outcome = loUnauthorized
+    ElseIf http.Status = GcvLocalApi.HTTP_UNAVAILABLE Then
+        result.Outcome = loUnavailable
+    ElseIf http.Status = HTTP_NOT_FOUND Then
         result.Outcome = loNotFound
     ElseIf http.Status >= 200 And http.Status < 300 Then
         result.Outcome = loFound
@@ -77,6 +81,10 @@ ConnectionError:
     result.ErrorDescription = Err.Description
     LogWarn LOG_SOURCE, "Registry request failed after " & ElapsedMs(started) & " ms: " & Err.Description
     Set IStudentApi_FetchStudent = result
+End Function
+
+Private Function IStudentApi_Health() As String
+    IStudentApi_Health = GcvLocalApi.ReadHealth(GcvLocalApi.HealthUrl(baseUrl))
 End Function
 
 Private Function Utf8ResponseText(ByVal http As Object) As String

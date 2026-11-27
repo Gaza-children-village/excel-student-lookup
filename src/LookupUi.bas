@@ -36,6 +36,7 @@ Public Sub AddinSelfCheck()
     StudentRegistry.StatusHeader
     GcvWorkbook.IsStudentSheet Nothing
     T_SelectRows
+    GcvLocalApi.HealthUrl vbNullString
 End Sub
 
 ' ----------------------------------------------------------------------------

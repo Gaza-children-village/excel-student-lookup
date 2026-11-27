@@ -14,3 +14,8 @@ Option Explicit
 
 Public Function FetchStudent(ByVal studentId As String) As StudentLookupResult
 End Function
+
+' GET /api/health of the GCV application, "" when it does not answer.
+' Only called after a failed request.
+Public Function Health() As String
+End Function
